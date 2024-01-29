@@ -73,7 +73,7 @@ root = tk.Tk()
 root.title("Age Prediction")
 
 # Load your dataset and prepare labels
-data_dir = 'images/'
+data_dir = r'D:\images'
 image_paths = [os.path.join(data_dir, filename) for filename in os.listdir(data_dir) if filename.lower().endswith(('.jpg', '.jpeg'))]
 labels = extract_age_labels(image_paths)
 
