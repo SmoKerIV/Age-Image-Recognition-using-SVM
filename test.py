@@ -60,16 +60,17 @@ def update_image(image_path):
 # Create the main GUI window
 root = tk.Tk()
 root.title("Age Prediction App")
+root.geometry("500x400")
 
 # Create and set up GUI components
-browse_button = tk.Button(root, text="Browse", command=browse_image)
-browse_button.pack(pady=10)
+# Create and set up GUI components
+browse_button = tk.Button(root, text="Browse", command=browse_image, width=20, height=2)
+browse_button.pack(pady=(200, 10))  # Adjust the pady to move the button down
 
 panel = tk.Label(root)
 panel.pack(pady=10)
 
 age_label = tk.Label(root, text="")
 age_label.pack(pady=10)
-
 # Run the GUI main loop
 root.mainloop()
