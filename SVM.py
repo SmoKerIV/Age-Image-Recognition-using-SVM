@@ -14,29 +14,42 @@ def extract_faces(images_folder):
     faces = []
     ages = []
 
+    image_extensions = ['.jpg', '.jpeg', '.png']  # Add more extensions if needed
+
     for filename in tqdm(os.listdir(images_folder), desc='Extracting Faces'):
-        path = os.path.join(images_folder, filename)
-        age = int(filename.split('A')[1][:2])  # Extract two digits after 'A'
-        
-        # Read the image
-        img = cv2.imread(path)
-        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        if any(filename.lower().endswith(ext) for ext in image_extensions):
+            path = os.path.join(images_folder, filename)
 
-        # Use a pre-trained face detector (like Haarcascades)
-        face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
-        faces_rect = face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5)
+            # Extract birth year and image year from the filename
+            birth_year = int(filename.split('_')[1][:4])
+            image_year = int(filename.split('_')[2][:4])
 
-        # Extract faces and ages
-        for (x, y, w, h) in faces_rect:
-            face = gray[y:y + h, x:x + w]
-            face = cv2.resize(face, (50, 50))  # Resize for consistency
-            faces.append(face.flatten())  # Flatten the image array
-            ages.append(age)
+            # Calculate age
+            age = image_year - birth_year
+
+            # Read the image
+            img = cv2.imread(path)
+
+            if img is not None:  # Check if the image is successfully loaded
+                gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+
+                # Use a pre-trained face detector (like Haarcascades)
+                face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
+                faces_rect = face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5)
+
+                # Extract faces and ages
+                for (x, y, w, h) in faces_rect:
+                    face = gray[y:y + h, x:x + w]
+                    face = cv2.resize(face, (50, 50))  # Resize for consistency
+                    faces.append(face.flatten())  # Flatten the image array
+                    ages.append(age)
+            else:
+                print(f"Failed to load image: {path}")
 
     return faces, ages
 
 # Load images and labels
-images_folder = r'C:\Users\GTYaseen\Desktop\images'
+images_folder = r'C:\Users\GTYaseen\Desktop\Faces'
 faces, ages = extract_faces(images_folder)
 
 # Split the dataset into training and testing sets
