@@ -1,4 +1,3 @@
-# Import necessary libraries
 import os
 import numpy as np
 import cv2
@@ -6,6 +5,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.svm import SVC
 from sklearn.metrics import accuracy_score
 import matplotlib.pyplot as plt
+import csv
 
 # Function to extract faces from images with age information in filenames
 def extract_faces(images_folder):
@@ -44,22 +44,34 @@ X_train, X_test, y_train, y_test = train_test_split(faces, ages, test_size=0.2, 
 svm_model = SVC(kernel='linear', C=1)
 svm_model.fit(X_train, y_train)
 
-# Test and predict on the last 10 images in the folder
-last_10_images = sorted(os.listdir(images_folder))[-10:]
+# Test and predict on the last 5 images in the folder
+last_5_images = sorted(os.listdir(images_folder))[-5:]
 
 test_faces, true_ages = extract_faces(images_folder)
 
 # Make predictions on the test set
 predicted_ages = svm_model.predict(test_faces)
+
 # Calculate accuracy
 accuracy = accuracy_score(true_ages, predicted_ages)
 print(f"Accuracy: {accuracy * 100:.2f}%")
 
-# Visualize predictions for the last 10 images
-for i in range(len(last_10_images)):
-    plt.subplot(1, len(last_10_images), i + 1)
+# Visualize predictions for the last 5 images
+for i in range(len(last_5_images)):
+    plt.subplot(1, len(last_5_images), i + 1)
     plt.imshow(np.reshape(test_faces[i], (50, 50)), cmap='gray')
     plt.title(f"True: {true_ages[i]}, Predicted: {predicted_ages[i]}")
     plt.axis('off')
 
 plt.show()
+
+# Write predictions to a CSV file
+output_file = 'predictions.csv'
+with open(output_file, 'w', newline='') as csvfile:
+    csv_writer = csv.writer(csvfile)
+    csv_writer.writerow(['True Age', 'Predicted Age'])
+
+    for true_age, predicted_age in zip(true_ages, predicted_ages):
+        csv_writer.writerow([true_age, predicted_age])
+
+print(f"Predictions written to {output_file}")
