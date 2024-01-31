@@ -2,14 +2,18 @@ import cv2
 import numpy as np
 from sklearn.svm import SVC
 from joblib import load
+import tkinter as tk
+from tkinter import filedialog
+from PIL import Image, ImageTk
 
 # Load the saved SVM model
 model_filename = 'svm_model.joblib'
 loaded_svm_model = load(model_filename)
 
 # Function to extract faces from an image
-def extract_face(image):
-    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+def extract_face(image_path):
+    img = cv2.imread(image_path)
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
     # Use a pre-trained face detector (like Haarcascades)
     face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
@@ -24,38 +28,48 @@ def extract_face(image):
     face = gray[y:y + h, x:x + w]
     face = cv2.resize(face, (50, 50))  # Resize for consistency
 
-    return [(x, y, w, h), face.flatten()]  # Return face rectangle and flattened image array
+    return [face.flatten()]  # Return a list with a single flattened image array
 
-# Initialize camera capture
-cap = cv2.VideoCapture(0)  # Use 0 for the default camera, adjust if you have multiple cameras
+# Function to handle the "Browse" button click event
+def browse_image():
+    file_path = filedialog.askopenfilename()
+    if file_path:
+        update_image(file_path)
 
-while True:
-    # Read a frame from the camera
-    ret, frame = cap.read()
+# Function to update the displayed image and predict age
+def update_image(image_path):
+    test_faces = extract_face(image_path)
 
-    # Extract face from the frame
-    face_info = extract_face(frame)
+    # Check if a face was successfully extracted
+    if test_faces:
+        # Make predictions on the test set
+        predicted_ages = loaded_svm_model.predict(test_faces)
 
-    if face_info:
-        # Unpack face information
-        (x, y, w, h), face = face_info
+        # Display the image
+        img = Image.open(image_path)
+        img.thumbnail((300, 300))
+        img = ImageTk.PhotoImage(img)
+        panel.configure(image=img)
+        panel.image = img
 
-        # Make prediction on the face
-        predicted_age = loaded_svm_model.predict([face])[0]
+        # Update the predicted age label
+        age_label.config(text=f"Predicted Age: {predicted_ages[0]}")
+    else:
+        age_label.config(text="No face detected or multiple faces found.")
 
-        # Draw a rectangle around the face
-        cv2.rectangle(frame, (x, y), (x + w, y + h), (255, 0, 0), 2)
+# Create the main GUI window
+root = tk.Tk()
+root.title("Age Prediction App")
 
-        # Display the predicted age
-        cv2.putText(frame, f"Age: {predicted_age}", (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
+# Create and set up GUI components
+browse_button = tk.Button(root, text="Browse", command=browse_image)
+browse_button.pack(pady=10)
 
-    # Display the frame
-    cv2.imshow("Face Age Prediction", frame)
+panel = tk.Label(root)
+panel.pack(pady=10)
 
-    # Exit on 'q' key press
-    if cv2.waitKey(1) & 0xFF == ord('q'):
-        break
+age_label = tk.Label(root, text="")
+age_label.pack(pady=10)
 
-# Release the camera and close the window
-cap.release()
-cv2.destroyAllWindows()
+# Run the GUI main loop
+root.mainloop()
