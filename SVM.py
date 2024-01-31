@@ -6,13 +6,15 @@ from sklearn.svm import SVC
 from sklearn.metrics import accuracy_score
 import matplotlib.pyplot as plt
 import csv
+from joblib import dump, load
+from tqdm import tqdm  # Import tqdm for progress bar
 
 # Function to extract faces from images with age information in filenames
 def extract_faces(images_folder):
     faces = []
     ages = []
 
-    for filename in os.listdir(images_folder):
+    for filename in tqdm(os.listdir(images_folder), desc='Extracting Faces'):
         path = os.path.join(images_folder, filename)
         age = int(filename.split('A')[1][:2])  # Extract two digits after 'A'
         
@@ -34,7 +36,7 @@ def extract_faces(images_folder):
     return faces, ages
 
 # Load images and labels
-images_folder = r'C:\Users\laith\Desktop\archive\FGNET\images'
+images_folder = r'C:\Users\GTYaseen\Desktop\images'
 faces, ages = extract_faces(images_folder)
 
 # Split the dataset into training and testing sets
@@ -42,15 +44,25 @@ X_train, X_test, y_train, y_test = train_test_split(faces, ages, test_size=0.2, 
 
 # Create and train the Support Vector Machine model
 svm_model = SVC(kernel='linear', C=1)
-svm_model.fit(X_train, y_train)
+with tqdm(desc='Training SVM', total=len(X_train)) as pbar:
+    svm_model.fit(X_train, y_train)
+    pbar.update(len(X_train))
+
+# Save the trained model to a file
+model_filename = 'svm_model.joblib'
+dump(svm_model, model_filename)
+print(f"Trained model saved to {model_filename}")
 
 # Test and predict on the last 5 images in the folder
 last_5_images = sorted(os.listdir(images_folder))[-5:]
 
+# Load the saved model
+loaded_svm_model = load(model_filename)
+
 test_faces, true_ages = extract_faces(images_folder)
 
 # Make predictions on the test set
-predicted_ages = svm_model.predict(test_faces)
+predicted_ages = loaded_svm_model.predict(test_faces)
 
 # Calculate accuracy
 accuracy = accuracy_score(true_ages, predicted_ages)
